@@ -12,6 +12,7 @@ import { getUnsavedChangesMessage } from './utils/unsavedChanges.js'
 
 const { t, locale } = useI18n()
 const auth = inject('portalAuth')
+const portalConfig = inject('portalConfig')
 const theme = useTheme()
 const vuetiwatch = useVuetiwatch()
 const route = useRoute()
@@ -27,16 +28,16 @@ const previewUsers = ref([])
 const selectedPreviewUserId = ref('')
 const isDevMode = import.meta.env.DEV
   && String(import.meta.env.VITE_PORTAL_DEV_MODE).toLowerCase() === 'true'
-const displayName = computed(() => import.meta.env.VITE_MANAGEMENT_DISPLAY_NAME || t('management.title'))
+const displayName = computed(() => portalConfig.managementDisplayName || t('management.title'))
 const brandInitial = computed(() => {
   return Array.from(String(displayName.value).trim())[0]?.toLocaleUpperCase() || 'P'
 })
 const isDark = computed(() => theme.global.name.value === 'atlasDark')
 const selectedLocale = computed(() => localeOptions.find((option) => option.code === locale.value) || localeOptions[0])
 const accountEditUrl = computed(() => {
-  const configuredUrl = import.meta.env.VITE_ACCOUNT_MANAGEMENT_URL
+  const configuredUrl = portalConfig.accountManagementUrl
   if (configuredUrl) return configuredUrl
-  const issuer = import.meta.env.VITE_OIDC_AUTHORITY
+  const issuer = portalConfig.oidcAuthority
   if (!issuer) return ''
   try {
     const url = new URL(issuer)

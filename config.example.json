@@ -1,0 +1,7 @@
+{
+  "managementDisplayName": "Portal",
+  "oidcAuthority": "https://identity.example.invalid/realms/example",
+  "oidcClientId": "portal-management",
+  "accountManagementUrl": "",
+  "apiBaseUrl": "/api"
+}

@@ -23,12 +23,13 @@ deployment time.
 - `silent-renew.html` — hidden OIDC callback used for token renewal.
 
 The management frontend uses the provider-neutral `oidc-client-ts` library
-with OIDC discovery and Authorization Code with PKCE. Set
-`VITE_OIDC_AUTHORITY` and `VITE_OIDC_CLIENT_ID` for the selected identity
-provider. Register the application root and `silent-renew.html` as redirect
-URIs for a public browser client. The API audience must be included in issued
-access tokens. The frontend keeps tokens in memory and sends them using the
-Bearer authorization header; the backend validates them.
+with OIDC discovery and Authorization Code with PKCE. Production identity
+provider settings are supplied through runtime configuration below; local Vite
+development can use the corresponding `VITE_` variables. Register the
+application root and `silent-renew.html` as redirect URIs for a public browser
+client. The API audience must be included in issued access tokens. The frontend
+keeps tokens in memory and sends them using the Bearer authorization header; the
+backend validates them.
 
 The development server proxies `/api` to `VITE_API_PROXY_TARGET`. In
 deployment, route `/api` on the management origin to the backend so browser
@@ -48,9 +49,43 @@ separate from live registration freshness.
 
 ## Configuration
 
-Use `VITE_MANAGEMENT_DISPLAY_NAME` for the deployed display name. Configure
-hostnames in deployment and DNS settings. Do not place deployment-specific values
-in reusable source files.
+Production configuration is loaded at container startup and served from
+`/config.json`; the browser fetches it before initializing Vue or OIDC. The
+container merges defaults, an optional JSON file at `/etc/portal/config.json`,
+then environment variables. Set `PORTAL_CONFIG_FILE` to use a different mounted
+file path. Environment variables override the matching file fields.
+
+| Environment variable | JSON field | Default | Purpose |
+| --- | --- | --- | --- |
+| `PORTAL_MANAGEMENT_DISPLAY_NAME` | `managementDisplayName` | `Portal` | Display name shown in the app |
+| `PORTAL_OIDC_AUTHORITY` | `oidcAuthority` | Required | OIDC issuer/discovery authority |
+| `PORTAL_OIDC_CLIENT_ID` | `oidcClientId` | Required | Public browser client ID |
+| `PORTAL_ACCOUNT_MANAGEMENT_URL` | `accountManagementUrl` | Empty | Optional account page URL; if empty, Portal derives it from the authority |
+| `PORTAL_API_BASE_URL` | `apiBaseUrl` | `/api` | Same-origin backend API path |
+
+The config file must be a JSON object containing only these fields, with string
+values. The container rejects invalid JSON, unknown fields, missing OIDC values,
+or an empty API base path. These values are public because the browser receives
+them; never put credentials or secrets in this configuration. Hostnames remain
+deployment and DNS settings rather than frontend values.
+
+Build the generic image from this directory with `docker build -t portal-frontend .`.
+Run it on port 8080, for example:
+
+```sh
+docker run --rm -p 8080:8080 \
+  -e PORTAL_OIDC_AUTHORITY=https://identity.example.invalid/realms/example \
+  -e PORTAL_OIDC_CLIENT_ID=portal-management \
+  portal-frontend
+```
+
+To use a JSON file instead, copy `config.example.json`, set its OIDC values, and
+mount it read-only at `/etc/portal/config.json`. Per-field environment variables
+still override the mounted values. Restart the container after changing its
+environment or mounted file. Nginx runs as a non-root user on port 8080, serves
+the SPA with history fallback, and does not proxy `/api`; route `/api` and TLS
+through the deployment's ingress or reverse proxy. `/config.json` is served with
+cache prevention so a browser page load sees the current container config.
 
 For local frontend review, set `VITE_PORTAL_DEV_MODE=true` in `.env.local` and
 run `npm run dev`. This replaces OIDC and the session endpoint with a local mock
