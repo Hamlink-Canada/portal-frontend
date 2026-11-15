@@ -5,9 +5,6 @@ import {
 } from 'oidc-client-ts'
 import { trimOneLeadingSlash, trimOneTrailingSlash } from './utils/regex.js'
 
-const authority = import.meta.env.VITE_OIDC_AUTHORITY
-const clientId = import.meta.env.VITE_OIDC_CLIENT_ID
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
 const devMode = import.meta.env.DEV && String(import.meta.env.VITE_PORTAL_DEV_MODE).toLowerCase() === 'true'
 const backendPreview = devMode && String(import.meta.env.VITE_PORTAL_BACKEND_PREVIEW).toLowerCase() === 'true'
 const signOutFlag = 'portal-oidc-signout-callback'
@@ -17,7 +14,7 @@ const localRoutes = new Set(['/', '/sites', '/repeaters', '/entities', '/profile
 const isLocalRoute = (path) => localRoutes.has(path)
   || /^\/(?:sites|entities)\/(?:new|\d+(?:\/edit)?)$/.test(path)
   || /^\/repeaters\/(?:new|\d+(?:\/edit)?)$/.test(path)
-function createUserManager() {
+function createUserManager(authority, clientId) {
   if (!authority || !clientId) {
     throw new Error('OIDC authority and client ID must be configured.')
   }
@@ -39,7 +36,8 @@ function createUserManager() {
   })
 }
 
-export function createPortalAuth() {
+export function createPortalAuth(config) {
+  const { oidcAuthority: authority, oidcClientId: clientId, apiBaseUrl } = config
   let manager
 
   async function initialize() {
