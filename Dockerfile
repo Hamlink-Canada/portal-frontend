@@ -1,5 +1,6 @@
 # Build the static Portal application once, then serve it with unprivileged Nginx.
-FROM node:22-alpine AS build
+# Vite emits architecture-independent files, so build them on the native worker instead of under QEMU.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 
 WORKDIR /app
 COPY package.json package-lock.json ./
