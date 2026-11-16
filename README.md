@@ -70,6 +70,9 @@ them; never put credentials or secrets in this configuration. Hostnames remain
 deployment and DNS settings rather than frontend values.
 
 Build the generic image from this directory with `docker build -t portal-frontend .`.
+GitHub Actions also builds a multi-architecture image for pull requests and pushes
+to `main`. Publishing a GitHub release publishes the versioned image to
+`ghcr.io/hamlink-canada/portal-frontend`; stable releases also update `latest`.
 Run it on port 8080, for example:
 
 ```sh
