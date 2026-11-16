@@ -10,6 +10,10 @@ RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:alpine AS runtime
 
+ARG VCS_REF=development
+LABEL org.opencontainers.image.source="https://github.com/Hamlink-Canada/Portal-Frontend" \
+      org.opencontainers.image.revision="$VCS_REF"
+
 USER root
 RUN apk add --no-cache jq
 COPY --from=build --chown=101:101 /app/dist/ /usr/share/nginx/html/
