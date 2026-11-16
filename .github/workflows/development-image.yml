@@ -50,5 +50,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.tags.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/Hamlink-Canada/Portal-Frontend
           build-args: VCS_REF=${{ github.sha }}
           provenance: true
