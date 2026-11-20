@@ -67,11 +67,12 @@ overrides=$(jq -n \
         if $setting[1] then . + {($setting[0]): $setting[2]} else . end
     )')
 
-if ! printf '%s\n%s\n%s\n' "$defaults" "$file_config" "$overrides" | jq -se '
+if ! printf '%s\n%s\n%s\n' "$defaults" "$file_config" "$overrides" | jq -se \
+    --arg devPreview "${PORTAL_DEV_PREVIEW:-false}" '
     .[0] * .[1] * .[2]
     | if (.managementDisplayName | type == "string" and length > 0)
-        and (.oidcAuthority | type == "string" and length > 0)
-        and (.oidcClientId | type == "string" and length > 0)
+        and (($devPreview == "true") or ((.oidcAuthority | type == "string" and length > 0)
+          and (.oidcClientId | type == "string" and length > 0)))
         and (.accountManagementUrl | type == "string")
         and (.apiBaseUrl | type == "string" and length > 0)
       then .

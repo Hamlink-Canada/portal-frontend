@@ -53,7 +53,10 @@ jobs:
           tags: ${{ steps.tags.outputs.tags }}
           labels: |
             org.opencontainers.image.source=https://github.com/Hamlink-Canada/Portal-Frontend
-          build-args: VCS_REF=${{ github.sha }}
+          build-args: |
+            VCS_REF=${{ github.sha }}
+            VITE_PORTAL_DEV_MODE=true
+            VITE_PORTAL_BACKEND_PREVIEW=true
           provenance: true
       - name: Clean up legacy image versions for this branch
         env:

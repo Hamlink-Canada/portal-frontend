@@ -92,11 +92,10 @@ cache prevention so a browser page load sees the current container config.
 
 For local frontend review, set `VITE_PORTAL_DEV_MODE=true` in `.env.local` and
 run `npm run dev`. This replaces OIDC and the session endpoint with a local mock
-and displays a development-preview watermark. Sign in and out with the usual
-Portal controls; those actions use the local mock identity. The mode is gated by
-Vite's development flag (`import.meta.env.DEV`), so the mock and watermark are
-disabled in production builds even if the environment value is accidentally
-left enabled. The mock never sends requests to the backend.
+and displays a development-preview watermark. Branch-build Docker images enable
+the backend-backed preview using both `VITE_PORTAL_DEV_MODE=true` and
+`VITE_PORTAL_BACKEND_PREVIEW=true`; tagged release images compile the preview
+flow out. Local-only preview mode never sends requests to the backend.
 While signed in during development preview, use the app-bar “Preview as”
 selector to switch between a regular Entity owner and a System Super Admin.
 Regular users can view the Entity site limit but cannot edit it; the preview

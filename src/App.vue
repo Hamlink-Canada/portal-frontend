@@ -26,8 +26,7 @@ const isLoading = ref(true)
 const previewUserVersion = ref(0)
 const previewUsers = ref([])
 const selectedPreviewUserId = ref('')
-const isDevMode = import.meta.env.DEV
-  && String(import.meta.env.VITE_PORTAL_DEV_MODE).toLowerCase() === 'true'
+const isDevMode = String(import.meta.env.VITE_PORTAL_DEV_MODE).toLowerCase() === 'true'
 const displayName = computed(() => portalConfig.managementDisplayName || t('management.title'))
 const brandInitial = computed(() => {
   return Array.from(String(displayName.value).trim())[0]?.toLocaleUpperCase() || 'P'
