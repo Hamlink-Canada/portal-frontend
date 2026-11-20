@@ -1,5 +1,4 @@
-const isDevelopmentPreview = import.meta.env.DEV
-  && String(import.meta.env.VITE_PORTAL_DEV_MODE).toLowerCase() === 'true'
+const isDevelopmentPreview = String(import.meta.env.VITE_PORTAL_DEV_MODE).toLowerCase() === 'true'
 
 function validateConfig(config) {
   if (!config || typeof config !== 'object' || Array.isArray(config)) {

@@ -53,6 +53,7 @@ overrides=$(jq -n \
     --arg oidcAuthority "${PORTAL_OIDC_AUTHORITY-}" \
     --argjson oidcClientIdSet "$oidc_client_id_set" \
     --arg oidcClientId "${PORTAL_OIDC_CLIENT_ID-}" \
+    --arg devPreview "${PORTAL_DEV_PREVIEW:-false}" \
     --argjson accountUrlSet "$account_url_set" \
     --arg accountManagementUrl "${PORTAL_ACCOUNT_MANAGEMENT_URL-}" \
     --argjson apiBaseUrlSet "$api_base_url_set" \
@@ -70,8 +71,8 @@ overrides=$(jq -n \
 if ! printf '%s\n%s\n%s\n' "$defaults" "$file_config" "$overrides" | jq -se '
     .[0] * .[1] * .[2]
     | if (.managementDisplayName | type == "string" and length > 0)
-        and (.oidcAuthority | type == "string" and length > 0)
-        and (.oidcClientId | type == "string" and length > 0)
+        and (($devPreview == "true") or ((.oidcAuthority | type == "string" and length > 0)
+          and (.oidcClientId | type == "string" and length > 0)))
         and (.accountManagementUrl | type == "string")
         and (.apiBaseUrl | type == "string" and length > 0)
       then .

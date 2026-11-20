@@ -5,8 +5,9 @@ import {
 } from 'oidc-client-ts'
 import { trimOneLeadingSlash, trimOneTrailingSlash } from './utils/regex.js'
 
-const devMode = import.meta.env.DEV && String(import.meta.env.VITE_PORTAL_DEV_MODE).toLowerCase() === 'true'
-const backendPreview = devMode && String(import.meta.env.VITE_PORTAL_BACKEND_PREVIEW).toLowerCase() === 'true'
+const devMode = String(import.meta.env.VITE_PORTAL_DEV_MODE).toLowerCase() === 'true'
+const backendPreview = devMode
+  && String(import.meta.env.VITE_PORTAL_BACKEND_PREVIEW).toLowerCase() === 'true'
 const signOutFlag = 'portal-oidc-signout-callback'
 const returnToKey = 'portal-oidc-return-to'
 const devTokenKey = 'portal-dev-access-token'

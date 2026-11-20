@@ -3,6 +3,10 @@
 FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 
 WORKDIR /app
+ARG VITE_PORTAL_DEV_MODE=false
+ARG VITE_PORTAL_BACKEND_PREVIEW=false
+ENV VITE_PORTAL_DEV_MODE=$VITE_PORTAL_DEV_MODE \
+    VITE_PORTAL_BACKEND_PREVIEW=$VITE_PORTAL_BACKEND_PREVIEW
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
@@ -11,8 +15,10 @@ RUN npm run build
 FROM nginxinc/nginx-unprivileged:alpine AS runtime
 
 ARG VCS_REF=development
+ARG VITE_PORTAL_BACKEND_PREVIEW=false
 LABEL org.opencontainers.image.source="https://github.com/Hamlink-Canada/Portal-Frontend" \
       org.opencontainers.image.revision="$VCS_REF"
+ENV PORTAL_DEV_PREVIEW=$VITE_PORTAL_BACKEND_PREVIEW
 
 USER root
 RUN apk add --no-cache jq

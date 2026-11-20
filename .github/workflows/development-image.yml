@@ -34,8 +34,7 @@ jobs:
         run: |
           branch_slug=$(printf '%s' "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/-/g; s/^[.-]+//; s/[.-]+$//' | cut -c1-60)
           branch_slug=${branch_slug:-branch}
-          branch_hash=$(printf '%s' "$BRANCH_NAME" | sha256sum | cut -c1-12)
-          branch_tag="dev-$branch_slug-$branch_hash"
+          branch_tag="dev-$branch_slug"
           image="ghcr.io/hamlink-canada/portal-frontend"
           {
             echo 'tags<<EOF'
@@ -52,5 +51,8 @@ jobs:
           tags: ${{ steps.tags.outputs.tags }}
           labels: |
             org.opencontainers.image.source=https://github.com/Hamlink-Canada/Portal-Frontend
-          build-args: VCS_REF=${{ github.sha }}
+          build-args: |
+            VCS_REF=${{ github.sha }}
+            VITE_PORTAL_DEV_MODE=true
+            VITE_PORTAL_BACKEND_PREVIEW=true
           provenance: true
