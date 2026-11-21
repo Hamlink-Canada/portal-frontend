@@ -10,6 +10,41 @@
     "unsavedChanges": "Vous avez des modifications non enregistrées. Enregistrez-les ou annulez-les avant de quitter cette page. Si vous partez maintenant, vos modifications seront perdues. Voulez-vous quand même partir ?",
     "notManageable": "Vous n’avez pas l’autorisation de modifier cet élément."
   },
+  "apiErrors": {
+    "status": {
+      "400": "Certaines informations sont manquantes ou invalides. Vérifiez le formulaire et réessayez.",
+      "401": "Votre session a expiré. Reconnectez-vous pour continuer.",
+      "403": "Vous n’avez pas l’autorisation d’effectuer cette action.",
+      "404": "Cet élément est introuvable. Il a peut-être été supprimé ou n’est plus accessible.",
+      "409": "Cette modification entre en conflit avec les données actuelles. Actualisez la page et réessayez.",
+      "422": "Certaines informations sont invalides. Vérifiez le formulaire et réessayez.",
+      "429": "Trop de requêtes ont été envoyées. Attendez un instant et réessayez.",
+      "other": "Le service n’a pas pu traiter votre demande. Réessayez plus tard."
+    },
+    "codes": {
+      "database_unavailable": "Le service est temporairement indisponible. Réessayez plus tard.",
+      "site_code_mapping_unavailable": "Les renseignements sur les codes de site sont temporairement indisponibles. Réessayez plus tard.",
+      "forbidden": "Vous n’avez pas l’autorisation d’effectuer cette action.",
+      "system_super_admin_required": "Seul un super administrateur système peut effectuer cette modification.",
+      "site_identity_system_admin_required": "Seul un administrateur système peut modifier l’identité de ce site.",
+      "site_location_system_admin_required": "Seul un administrateur système peut modifier l’emplacement de ce site.",
+      "entity_not_found": "Cette organisation est introuvable ou ne vous est plus accessible.",
+      "site_not_found": "Ce site est introuvable ou ne vous est plus accessible.",
+      "repeater_not_found": "Ce répéteur est introuvable ou ne vous est plus accessible.",
+      "site_code_selection_required": "Sélectionnez un code de site disponible avant d’enregistrer.",
+      "site_id_required": "Attribuez un ID de site à ce site avant d’ajouter un répéteur.",
+      "entity_max_sites_exceeded": "Cette organisation a atteint sa limite de sites.",
+      "max_sites_below_current_site_count": "Le nombre maximal de sites ne peut pas être inférieur au nombre déjà attribué.",
+      "site_numbering_capacity_reached": "Ce site n’a plus de Node ID disponible.",
+      "node_id_already_exists": "Ce répéteur n’a pas pu être enregistré, car son Node ID est déjà utilisé.",
+      "node_id_credential_already_exists": "Un identifiant existe déjà pour ce Node ID.",
+      "site_exists": "Un site avec ces renseignements existe déjà.",
+      "numbering_mode_locked_after_repeater_creation": "La numérotation des Node ID ne peut plus être modifiée après l’ajout de répéteurs.",
+      "site_code_locked_after_repeater_creation": "Le code de site ne peut plus être modifié après l’ajout de répéteurs.",
+      "entity_owner_is_not_a_member": "Le propriétaire de l’organisation ne peut pas aussi être ajouté comme membre.",
+      "primary_call_sign_required_for_akas": "Ajoutez un indicatif principal avant les autres indicatifs."
+    }
+  },
   "settings": {
     "locale": "Langue",
     "switchToLight": "Passer au mode clair",

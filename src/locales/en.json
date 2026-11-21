@@ -10,6 +10,41 @@
     "unsavedChanges": "You have unsaved changes. Save or cancel before leaving this page. If you leave now, your changes will be lost. Leave anyway?",
     "notManageable": "You do not have permission to edit this item."
   },
+  "apiErrors": {
+    "status": {
+      "400": "Some information is missing or invalid. Review the form and try again.",
+      "401": "Your session has expired. Sign in again to continue.",
+      "403": "You do not have permission to complete this action.",
+      "404": "This item could not be found. It may have been removed or is no longer available to you.",
+      "409": "This change conflicts with the current data. Refresh the page and try again.",
+      "422": "Some information is invalid. Review the form and try again.",
+      "429": "Too many requests were made. Wait a moment and try again.",
+      "other": "The service could not complete your request. Please try again later."
+    },
+    "codes": {
+      "database_unavailable": "The service is temporarily unavailable. Please try again later.",
+      "site_code_mapping_unavailable": "Site Code information is temporarily unavailable. Please try again later.",
+      "forbidden": "You do not have permission to complete this action.",
+      "system_super_admin_required": "Only a system administrator can make this change.",
+      "site_identity_system_admin_required": "Only a system administrator can change a Site’s identity settings.",
+      "site_location_system_admin_required": "Only a system administrator can change this Site’s location.",
+      "entity_not_found": "This Organisation could not be found or is no longer available to you.",
+      "site_not_found": "This Site could not be found or is no longer available to you.",
+      "repeater_not_found": "This Repeater could not be found or is no longer available to you.",
+      "site_code_selection_required": "Select an available Site Code before saving.",
+      "site_id_required": "Allocate a Site ID to this Site before adding a Repeater.",
+      "entity_max_sites_exceeded": "This Organisation has reached its Site limit.",
+      "max_sites_below_current_site_count": "The maximum Sites cannot be lower than the number already assigned.",
+      "site_numbering_capacity_reached": "This Site has no available Node IDs.",
+      "node_id_already_exists": "This Repeater could not be saved because its Node ID is already in use.",
+      "node_id_credential_already_exists": "A credential already exists for this Node ID.",
+      "site_exists": "A Site with these details already exists.",
+      "numbering_mode_locked_after_repeater_creation": "Node ID numbering cannot be changed after Repeaters have been added.",
+      "site_code_locked_after_repeater_creation": "The Site Code cannot be changed after Repeaters have been added.",
+      "entity_owner_is_not_a_member": "The Organisation owner cannot also be added as a member.",
+      "primary_call_sign_required_for_akas": "Add a primary call sign before adding alternate call signs."
+    }
+  },
   "settings": {
     "locale": "Language",
     "switchToLight": "Switch to light mode",

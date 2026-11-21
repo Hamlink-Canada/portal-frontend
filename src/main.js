@@ -111,7 +111,10 @@ async function startPortal() {
   })
 
   const app = createApp(App)
-  app.provide('portalAuth', createPortalAuth(portalConfig))
+  app.provide('portalAuth', createPortalAuth(portalConfig, {
+    t: i18n.global.t,
+    te: i18n.global.te,
+  }))
   app.provide('portalConfig', portalConfig)
 
   app

@@ -37,9 +37,25 @@ function createUserManager(authority, clientId) {
   })
 }
 
-export function createPortalAuth(config) {
+export function createPortalAuth(config, { t, te } = {}) {
   const { oidcAuthority: authority, oidcClientId: clientId, apiBaseUrl } = config
   let manager
+
+  async function errorForResponse(response) {
+    let payload
+    try {
+      payload = await response.clone().json()
+    } catch {
+      payload = null
+    }
+    const code = typeof payload?.error === 'string' ? payload.error : ''
+    const codeKey = `apiErrors.codes.${code}`
+    if (code && te?.(codeKey)) return new Error(t(codeKey))
+
+    const statusKey = `apiErrors.status.${response.status}`
+    if (te?.(statusKey)) return new Error(t(statusKey))
+    return new Error(t?.('apiErrors.status.other') || 'The service could not complete your request. Please try again later.')
+  }
 
   async function initialize() {
     if (devMode) {
@@ -72,7 +88,7 @@ export function createPortalAuth(config) {
   async function listPreviewUsers() {
     if (!backendPreview) throw new Error('Backend development preview is not enabled.')
     const response = await fetch(`${trimOneTrailingSlash(apiBaseUrl)}/v1/dev-preview/users`)
-    if (!response.ok) throw new Error(`Development preview returned HTTP ${response.status}.`)
+    if (!response.ok) throw await errorForResponse(response)
     return (await response.json()).items || []
   }
 
@@ -84,7 +100,7 @@ export function createPortalAuth(config) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId }),
       })
-      if (!response.ok) throw new Error(`Development sign-in returned HTTP ${response.status}.`)
+      if (!response.ok) throw await errorForResponse(response)
       const result = await response.json()
       window.sessionStorage.setItem(devTokenKey, result.access_token)
       return
@@ -143,9 +159,7 @@ export function createPortalAuth(config) {
         Authorization: `Bearer ${accessToken}`,
       },
     })
-    if (!response.ok) {
-      throw new Error(`Portal API returned HTTP ${response.status}.`)
-    }
+    if (!response.ok) throw await errorForResponse(response)
     return response.json()
   }
 
