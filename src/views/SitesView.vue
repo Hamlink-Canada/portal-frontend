@@ -509,6 +509,11 @@ watch(() => [route.name, route.params.id], async ([name, id]) => {
     const ownerEntityId = Number(route.query.owner_entity_id)
     const ownerEntity = entities.value.find((entity) => Number(entity.id) === ownerEntityId && entity.can_manage)
     if (route.query.owner_entity_id && !ownerEntity) {
+      editingSite.value = null
+      editLocation.value = null
+      editSiteCode.value = ''
+      creating.value = false
+      unsavedChanges.clearTracking()
       error.value = t('common.notManageable')
       return
     }
