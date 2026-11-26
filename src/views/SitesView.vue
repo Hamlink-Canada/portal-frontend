@@ -52,6 +52,9 @@ const listScope = ref('mine')
 const entityFilter = ref('all')
 const pagination = ref({ page: 1, page_size: pageSize.value, total: 0, pages: 1 })
 const editReturnRoute = ref({ name: 'sites' })
+let sitesRequest = 0
+let ownerCountRequest = 0
+let routeRequest = 0
 const location = ref(null)
 const editLocation = ref(null)
 const selectedSiteCode = ref('')
@@ -60,7 +63,7 @@ const selectedOwnerSiteCount = ref(null)
 const ownerSiteCountLoading = ref(false)
 const ownerSiteCountError = ref('')
 const form = reactive({ name: '', location: '', gridSquare: '', latitude: '', longitude: '', description: '', numberingMode: 'short', ownerSelection: 'user' })
-const editForm = reactive({ name: '', location: '', gridSquare: '', latitude: '', longitude: '', description: '', numberingMode: 'short' })
+const editForm = reactive({ name: '', location: '', gridSquare: '', latitude: '', longitude: '', description: '', numberingMode: 'short', siteId: '' })
 const unsavedChanges = useUnsavedChanges('sites', () => ({
   active: creating.value || Boolean(editingSite.value),
   form: { ...form },
@@ -73,6 +76,10 @@ const unsavedChanges = useUnsavedChanges('sites', () => ({
 watch(() => [form.gridSquare, form.latitude, form.longitude], () => {
   location.value = null
   selectedSiteCode.value = ''
+})
+watch(() => [editForm.gridSquare, editForm.latitude, editForm.longitude], () => {
+  editLocation.value = null
+  editSiteCode.value = ''
 })
 const siteCodeItems = computed(() => (location.value?.site_codes || [])
   .filter((item) => item.available_numbers > 0)
@@ -119,6 +126,7 @@ watch([search, listScope, entityFilter, pageSize], () => {
 })
 watch(page, () => loadSites())
 watch(() => form.ownerSelection, async (selection) => {
+  const requestId = ++ownerCountRequest
   const entityId = ownerEntityId(selection)
   selectedOwnerSiteCount.value = null
   ownerSiteCountError.value = ''
@@ -129,15 +137,15 @@ watch(() => form.ownerSelection, async (selection) => {
   ownerSiteCountLoading.value = true
   try {
     const result = await props.apiFetch(`v1/sites?page=1&page_size=1&entity_id=${entityId}`)
-    if (ownerEntityId(form.ownerSelection) === entityId) {
+    if (requestId === ownerCountRequest && ownerEntityId(form.ownerSelection) === entityId) {
       selectedOwnerSiteCount.value = Number(result.pagination?.total ?? result.items?.length ?? 0)
     }
   } catch (cause) {
-    if (ownerEntityId(form.ownerSelection) === entityId) {
+    if (requestId === ownerCountRequest && ownerEntityId(form.ownerSelection) === entityId) {
       ownerSiteCountError.value = cause instanceof Error ? cause.message : String(cause)
     }
   } finally {
-    if (ownerEntityId(form.ownerSelection) === entityId) ownerSiteCountLoading.value = false
+    if (requestId === ownerCountRequest) ownerSiteCountLoading.value = false
   }
 })
 const gridSquareRule = (value) => (
@@ -258,6 +266,7 @@ function cancelEditSite() {
 }
 
 async function loadSites() {
+  const requestId = ++sitesRequest
   loading.value = true
   error.value = ''
   try {
@@ -270,13 +279,15 @@ async function loadSites() {
       props.apiFetch(`v1/sites?${params}`),
       props.apiFetch('v1/orgs?page=1&page_size=100'),
     ])
+    if (requestId !== sitesRequest) return
     sites.value = siteResponse.items || []
     pagination.value = siteResponse.pagination || pagination.value
     entities.value = entityResponse.items || []
   } catch (cause) {
+    if (requestId !== sitesRequest) return
     error.value = cause instanceof Error ? cause.message : String(cause)
   } finally {
-    loading.value = false
+    if (requestId === sitesRequest) loading.value = false
   }
 }
 
@@ -304,10 +315,14 @@ async function resolveLocation() {
     return
   }
   try {
-    location.value = await props.apiFetch('v1/site-locations/resolve', {
+    const payload = locationPayload(form)
+    const snapshot = JSON.stringify(payload)
+    const result = await props.apiFetch('v1/site-locations/resolve', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(locationPayload(form)),
+      body: snapshot,
     })
+    if (snapshot !== JSON.stringify(locationPayload(form))) return
+    location.value = result
     if (siteCodeItems.value.length === 1) selectedSiteCode.value = siteCodeItems.value[0].value
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : String(cause)
@@ -360,6 +375,7 @@ function prepareEditSite(site) {
     longitude: site.longitude ?? '',
     description: site.description || '',
     numberingMode: site.numbering_mode || 'short',
+    siteId: site.site_id || '',
   })
   unsavedChanges.startTracking()
 }
@@ -381,10 +397,14 @@ async function resolveEditLocation() {
     return
   }
   try {
-    editLocation.value = await props.apiFetch('v1/site-locations/resolve', {
+    const payload = locationPayload(editForm)
+    const snapshot = JSON.stringify(payload)
+    const result = await props.apiFetch('v1/site-locations/resolve', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(locationPayload(editForm)),
+      body: snapshot,
     })
+    if (snapshot !== JSON.stringify(locationPayload(editForm))) return
+    editLocation.value = result
     if (editSiteCodeItems.value.length === 1) editSiteCode.value = editSiteCodeItems.value[0].value
     if (editSiteCodeItems.value.some((item) => item.value === editingSite.value.site_code)) {
       editSiteCode.value = editingSite.value.site_code
@@ -409,6 +429,9 @@ async function saveSite() {
       longitude: coordinates.longitude ?? null,
       numbering_mode: editForm.numberingMode,
     }
+    if (props.isSystemSuperAdmin && editForm.siteId !== (editingSite.value.site_id || '')) {
+      payload.site_id = editForm.siteId
+    }
     if (editLocation.value && editSiteCode.value) payload.site_code = editSiteCode.value
     await props.apiFetch(`v1/sites/${editingSite.value.id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
@@ -428,12 +451,15 @@ async function loadFormEntities() {
   try {
     const result = await props.apiFetch('v1/orgs?page=1&page_size=100')
     entities.value = result.items || []
+    return true
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : String(cause)
+    return false
   }
 }
 
 watch(() => [route.name, route.params.id], async ([name, id]) => {
+  const requestId = ++routeRequest
   error.value = ''
   if (name === 'sites') {
     creating.value = false
@@ -456,13 +482,15 @@ watch(() => [route.name, route.params.id], async ([name, id]) => {
         props.apiFetch(`v1/sites/${id}/repeaters?page=1&page_size=50`),
         props.apiFetch('v1/orgs?page=1&page_size=100'),
       ])
+      if (requestId !== routeRequest) return
       siteDetail.value = site
       siteRepeaters.value = repeaterResponse.items || []
       entities.value = entityResponse.items || []
     } catch (cause) {
+      if (requestId !== routeRequest) return
       error.value = cause instanceof Error ? cause.message : String(cause)
     } finally {
-      loading.value = false
+      if (requestId === routeRequest) loading.value = false
     }
     return
   }
@@ -471,9 +499,14 @@ watch(() => [route.name, route.params.id], async ([name, id]) => {
     editReturnRoute.value = Number.isInteger(fromEntityId) && fromEntityId > 0
       ? { name: 'entity-detail', params: { id: fromEntityId } }
       : { name: 'sites' }
-    if (!entities.value.length) await loadFormEntities()
+    if (!entities.value.length && !await loadFormEntities()) return
+    if (requestId !== routeRequest) return
     const ownerEntityId = Number(route.query.owner_entity_id)
     const ownerEntity = entities.value.find((entity) => Number(entity.id) === ownerEntityId && entity.can_manage)
+    if (route.query.owner_entity_id && !ownerEntity) {
+      error.value = t('common.notManageable')
+      return
+    }
     const ownerSelection = ownerEntity ? `entity:${ownerEntity.id}` : 'user'
     if (!creating.value) prepareNewSite(ownerSelection)
     else if (ownerEntity) form.ownerSelection = ownerSelection
@@ -489,13 +522,15 @@ watch(() => [route.name, route.params.id], async ([name, id]) => {
         props.apiFetch(`v1/sites/${id}`),
         props.apiFetch('v1/orgs?page=1&page_size=100'),
       ])
+      if (requestId !== routeRequest) return
       if (!site.can_manage) throw new Error(t('common.notManageable'))
       entities.value = entityResponse.items || []
       prepareEditSite(site)
     } catch (cause) {
+      if (requestId !== routeRequest) return
       error.value = cause instanceof Error ? cause.message : String(cause)
     } finally {
-      loading.value = false
+      if (requestId === routeRequest) loading.value = false
     }
   }
 }, { immediate: true })
@@ -605,6 +640,7 @@ watch(() => [route.name, route.params.id], async ([name, id]) => {
         <v-col cols="12" md="6"><v-text-field :model-value="ownerNameFromDetail(editingSite)" :label="t('sites.owner')" readonly hide-details /></v-col>
       </v-row>
       <div class="text-caption text-medium-emphasis mb-3">{{ t('sites.siteIdLabel') }}: {{ editingSite.site_id }} · {{ t('sites.siteCode') }}: {{ editingSite.site_code }}</div>
+      <v-text-field v-if="props.isSystemSuperAdmin" v-model="editForm.siteId" :label="t('sites.siteIdLabel')" :hint="t('sites.siteIdAdminHint')" persistent-hint maxlength="5" minlength="5" inputmode="numeric" :rules="[(value) => /^[0-9]{5}$/.test(String(value || '')) || t('sites.siteIdFormat')]" />
       <div class="text-subtitle-2 mb-2">{{ t('sites.precisePoint') }}</div>
       <v-row>
         <v-col cols="12" sm="6"><v-text-field v-model="editForm.latitude" :label="t('sites.latitude')" type="number" min="-90" max="90" step="any" :disabled="!editingSite.can_edit_identity" /></v-col>
@@ -617,7 +653,7 @@ watch(() => [route.name, route.params.id], async ([name, id]) => {
       <v-select v-if="editingSite.can_edit_identity && needsEditSiteCodeChoice" v-model="editSiteCode" :items="editSiteCodeItems" :label="t('sites.siteCode')" />
       <div class="site-submit-actions">
         <v-btn variant="text" class="mr-2" @click="cancelEditSite">{{ t('sites.cancel') }}</v-btn>
-        <v-btn class="site-submit-button" color="primary" :loading="saving" :disabled="!editForm.name.trim() || !editGridSquareValid || (needsEditSiteCodeChoice && !editSiteCode && editLocation)" @click="saveSite">{{ t('sites.save') }}</v-btn>
+        <v-btn class="site-submit-button" color="primary" :loading="saving" :disabled="!editForm.name.trim() || !editGridSquareValid || (props.isSystemSuperAdmin && !/^[0-9]{5}$/.test(editForm.siteId)) || (needsEditSiteCodeChoice && !editSiteCode && editLocation)" @click="saveSite">{{ t('sites.save') }}</v-btn>
       </div>
     </v-card>
 

@@ -79,6 +79,7 @@ const orderedCallSigns = computed(() => [...form.callSigns].sort((left, right) =
 }))
 const visibleEntities = computed(() => entities.value)
 const pageCount = computed(() => pagination.value.pages)
+let entitiesRequest = 0
 function setSearchValue(value) {
   search.value = value == null ? '' : String(value)
 }
@@ -119,6 +120,7 @@ function removeCallSign(value) {
 }
 
 async function loadEntities() {
+  const requestId = ++entitiesRequest
   loading.value = true
   error.value = ''
   try {
@@ -126,12 +128,14 @@ async function loadEntities() {
       q: searchQuery.value, page: String(page.value), page_size: String(pageSize.value), scope: listScope.value,
     })
     const result = await props.apiFetch(`v1/orgs?${params}`)
+    if (requestId !== entitiesRequest) return
     entities.value = result.items || []
     pagination.value = result.pagination || pagination.value
   } catch (cause) {
+    if (requestId !== entitiesRequest) return
     error.value = cause instanceof Error ? cause.message : String(cause)
   } finally {
-    loading.value = false
+    if (requestId === entitiesRequest) loading.value = false
   }
 }
 
