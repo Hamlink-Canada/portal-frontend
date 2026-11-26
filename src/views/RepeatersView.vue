@@ -95,6 +95,7 @@ const createRepeaterDisabled = computed(() => (
 ))
 const visibleRepeaters = computed(() => repeaters.value)
 const pageCount = computed(() => pagination.value.pages)
+let listRequest = 0
 function setSearchValue(value) {
   search.value = value == null ? '' : String(value)
 }
@@ -162,6 +163,7 @@ function cancelEditForm() {
 }
 
 async function load() {
+  const requestId = ++listRequest
   loading.value = true
   error.value = ''
   try {
@@ -175,14 +177,16 @@ async function load() {
       props.apiFetch(`v1/repeaters?${params}`),
       props.apiFetch('v1/orgs?page=1&page_size=100'),
     ])
+    if (requestId !== listRequest) return
     sites.value = siteResponse.items || []
     repeaters.value = repeaterResponse.items || []
     pagination.value = repeaterResponse.pagination || pagination.value
     entities.value = entityResponse.items || []
   } catch (cause) {
+    if (requestId !== listRequest) return
     error.value = cause instanceof Error ? cause.message : String(cause)
   } finally {
-    loading.value = false
+    if (requestId === listRequest) loading.value = false
   }
 }
 

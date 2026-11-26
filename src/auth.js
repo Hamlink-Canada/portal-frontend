@@ -20,7 +20,7 @@ function createUserManager(authority, clientId) {
     throw new Error('OIDC authority and client ID must be configured.')
   }
 
-  const managementUrl = new URL('./', window.location.href).toString()
+  const managementUrl = new URL(import.meta.env.BASE_URL, window.location.origin).toString()
   const silentRenewUrl = new URL('silent-renew.html', managementUrl).toString()
 
   return new UserManager({
@@ -64,11 +64,13 @@ export function createPortalAuth(config, { t, te } = {}) {
         ? window.sessionStorage.getItem(devTokenKey)
         : null
     }
-    manager = createUserManager()
+    manager = createUserManager(authority, clientId)
     const url = new URL(window.location.href)
     if (window.sessionStorage.getItem(signOutFlag) && url.searchParams.has('state')) {
-      await manager.signoutCallback()
-      window.sessionStorage.removeItem(signOutFlag)
+      const response = await manager.signoutCallback()
+      if (response?.userState?.purpose === 'portal-signout') {
+        window.sessionStorage.removeItem(signOutFlag)
+      }
     } else if (url.searchParams.has('code') || url.searchParams.has('error')) {
       const user = await manager.signinCallback()
       const returnTo = user?.state?.returnTo
@@ -81,7 +83,7 @@ export function createPortalAuth(config, { t, te } = {}) {
 
   async function completeSilentRenew() {
     if (devMode) return
-    manager = createUserManager()
+    manager = createUserManager(authority, clientId)
     await manager.signinSilentCallback()
   }
 
@@ -120,7 +122,12 @@ export function createPortalAuth(config, { t, te } = {}) {
       return
     }
     window.sessionStorage.setItem(signOutFlag, '1')
-    await manager.signoutRedirect()
+    try {
+      await manager.signoutRedirect({ state: { purpose: 'portal-signout' } })
+    } catch (cause) {
+      window.sessionStorage.removeItem(signOutFlag)
+      throw cause
+    }
   }
 
   async function setPreviewUser(userId) {
