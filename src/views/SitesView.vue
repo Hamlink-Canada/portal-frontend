@@ -20,6 +20,7 @@ const isFormRoute = computed(() => route.meta.formPage === true)
 const isDetailRoute = computed(() => route.name === 'site-detail')
 const sites = ref([])
 const entities = ref([])
+const entitiesLoaded = ref(false)
 const siteDetail = ref(null)
 const siteRepeaters = ref([])
 const repeaterEnabledSaving = ref(new Set())
@@ -283,6 +284,7 @@ async function loadSites() {
     sites.value = siteResponse.items || []
     pagination.value = siteResponse.pagination || pagination.value
     entities.value = entityResponse.items || []
+    entitiesLoaded.value = true
   } catch (cause) {
     if (requestId !== sitesRequest) return
     error.value = cause instanceof Error ? cause.message : String(cause)
@@ -330,7 +332,7 @@ async function resolveLocation() {
 }
 
 async function createSite() {
-  if (!location.value || ownerAtSiteLimit.value || ownerSiteCountLoading.value || ownerSiteCountError.value
+  if (!entitiesLoaded.value || !location.value || ownerAtSiteLimit.value || ownerSiteCountLoading.value || ownerSiteCountError.value
     || (selectedOwnerEntity.value && selectedOwnerSiteCount.value == null)) return
   saving.value = true
   error.value = ''
@@ -451,6 +453,7 @@ async function loadFormEntities() {
   try {
     const result = await props.apiFetch('v1/orgs?page=1&page_size=100')
     entities.value = result.items || []
+    entitiesLoaded.value = true
     return true
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : String(cause)
@@ -486,6 +489,7 @@ watch(() => [route.name, route.params.id], async ([name, id]) => {
       siteDetail.value = site
       siteRepeaters.value = repeaterResponse.items || []
       entities.value = entityResponse.items || []
+      entitiesLoaded.value = true
     } catch (cause) {
       if (requestId !== routeRequest) return
       error.value = cause instanceof Error ? cause.message : String(cause)
@@ -495,11 +499,12 @@ watch(() => [route.name, route.params.id], async ([name, id]) => {
     return
   }
   if (name === 'site-create') {
+    loading.value = false
     const fromEntityId = Number(route.query.fromEntity)
     editReturnRoute.value = Number.isInteger(fromEntityId) && fromEntityId > 0
       ? { name: 'entity-detail', params: { id: fromEntityId } }
       : { name: 'sites' }
-    if (!entities.value.length && !await loadFormEntities()) return
+    if (!entitiesLoaded.value && !await loadFormEntities()) return
     if (requestId !== routeRequest) return
     const ownerEntityId = Number(route.query.owner_entity_id)
     const ownerEntity = entities.value.find((entity) => Number(entity.id) === ownerEntityId && entity.can_manage)
@@ -525,6 +530,7 @@ watch(() => [route.name, route.params.id], async ([name, id]) => {
       if (requestId !== routeRequest) return
       if (!site.can_manage) throw new Error(t('common.notManageable'))
       entities.value = entityResponse.items || []
+      entitiesLoaded.value = true
       prepareEditSite(site)
     } catch (cause) {
       if (requestId !== routeRequest) return
@@ -627,7 +633,7 @@ watch(() => [route.name, route.params.id], async ([name, id]) => {
       <v-alert v-else-if="location" type="warning" variant="tonal" class="mb-4">{{ t('sites.noSiteCodeCapacity') }}</v-alert>
       <div class="site-submit-actions">
         <v-btn variant="text" class="mr-2" @click="cancelCreateSite">{{ t('sites.cancel') }}</v-btn>
-        <v-btn class="site-submit-button" color="primary" :loading="saving" :disabled="!form.name.trim() || !location || siteCodeItems.length === 0 || (needsSiteCodeChoice && !selectedSiteCode) || ownerAtSiteLimit || ownerSiteCountLoading || Boolean(ownerSiteCountError) || Boolean(selectedOwnerEntity && selectedOwnerSiteCount == null)" @click="createSite">{{ t('sites.create') }}</v-btn>
+        <v-btn class="site-submit-button" color="primary" :loading="saving" :disabled="!entitiesLoaded || !form.name.trim() || !location || siteCodeItems.length === 0 || (needsSiteCodeChoice && !selectedSiteCode) || ownerAtSiteLimit || ownerSiteCountLoading || Boolean(ownerSiteCountError) || Boolean(selectedOwnerEntity && selectedOwnerSiteCount == null)" @click="createSite">{{ t('sites.create') }}</v-btn>
       </div>
     </v-card>
 
@@ -653,7 +659,7 @@ watch(() => [route.name, route.params.id], async ([name, id]) => {
       <v-select v-if="editingSite.can_edit_identity && needsEditSiteCodeChoice" v-model="editSiteCode" :items="editSiteCodeItems" :label="t('sites.siteCode')" />
       <div class="site-submit-actions">
         <v-btn variant="text" class="mr-2" @click="cancelEditSite">{{ t('sites.cancel') }}</v-btn>
-        <v-btn class="site-submit-button" color="primary" :loading="saving" :disabled="!editForm.name.trim() || !editGridSquareValid || (props.isSystemSuperAdmin && !/^[0-9]{5}$/.test(editForm.siteId)) || (needsEditSiteCodeChoice && !editSiteCode && editLocation)" @click="saveSite">{{ t('sites.save') }}</v-btn>
+        <v-btn class="site-submit-button" color="primary" :loading="saving" :disabled="!editForm.name.trim() || !editGridSquareValid || (props.isSystemSuperAdmin && editForm.siteId !== (editingSite.site_id || '') && !/^[0-9]{5}$/.test(editForm.siteId)) || (needsEditSiteCodeChoice && !editSiteCode && editLocation)" @click="saveSite">{{ t('sites.save') }}</v-btn>
       </div>
     </v-card>
 
